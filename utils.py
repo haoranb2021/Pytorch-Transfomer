@@ -123,7 +123,7 @@ class PositionalEncoding(nn.Module):
         return x     
 
 
-class data_loader:
+class custom_loader:
     def __init__(self, batch_size, src_file):
         self.batch_size = batch_size
         self.train = pd.read_csv(src_file)
