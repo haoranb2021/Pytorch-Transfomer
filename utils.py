@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import pandas as pd
 import math
 
 def a_norm(Q, K):
@@ -120,7 +121,31 @@ class PositionalEncoding(nn.Module):
     def forward(self, x):
         x = x + self.pe[:x.size(1), :]. squeeze(1)
         return x     
-    
+
+
+class data_loader:
+    def __init__(self, batch_size, src_file):
+        self.batch_size = batch_size
+        self.train = pd.read_csv(src_file)
+        self.train_tensor = torch.tensor(self.train.to_numpy())
+        self.train_tensor = self.train_tensor[:, 1:2] # (2057, 1)
+        self.idx = 0
+        self.max_size = self.train_tensor.shape[0]
+
+    def get_next_batch_and_label(self, input_sequence_length, output_sequence_length):
+        total_len = input_sequence_length + output_sequence_length
+        if self.idx + (self.batch_size - 1) + total_len <= self.max_size:
+            max_step = self.batch_size - 1
+        else:
+            max_step = self.max_size - total_len - self.idx
+
+        s = [self.train_tensor[i: i + total_len, :].reshape(1, total_len) for i in range(self.idx, self.idx + max_step + 1)]
+        s = torch.cat(s) # (15, 7)
+        self.idx += (max_step + 1)
+        self.idx = 0 if self.idx + total_len > self.max_size else self.idx
+        return s[:, :input_sequence_length].unsqueeze(-1), s[:,-output_sequence_length:]
+
+
 def get_data(batch_size, input_sequence_length, output_sequence_length):
     i = input_sequence_length + output_sequence_length
     
